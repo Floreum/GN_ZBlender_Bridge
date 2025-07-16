@@ -22,6 +22,11 @@ class ExportSelectedToAssets(bpy.types.Operator):
         description="Apply modifiers before export",
         default=False
     )
+    export_shape_keys: bpy.props.BoolProperty(
+        name="Export Shape Keys Individually",
+        description="Export each shape key as a separate file",
+        default=False
+    )
 
     def invoke(self, context, event):
         # Show a confirmation dialog before executing
@@ -32,6 +37,7 @@ class ExportSelectedToAssets(bpy.types.Operator):
         layout.prop(self, "export_format")
         layout.prop(self, "zbrush")
         layout.prop(self, "apply_modifiers")
+        layout.prop(self, "export_shape_keys")
 
     def execute(self, context):
         blend_path = bpy.data.filepath
@@ -64,27 +70,65 @@ class ExportSelectedToAssets(bpy.types.Operator):
                 else:
                     self.report({'WARNING'}, f"Skipped applying modifiers for {obj.name} (has shape keys)")
 
-            export_path = os.path.join(assets_dir, f"{obj.name}.{self.export_format.lower()}")
-            if self.export_format == 'OBJ':
-                result = bpy.ops.wm.obj_export(
-                    filepath=export_path,
-                    export_selected_objects=True,
-                    global_scale=export_scale
-                )
-            elif self.export_format == 'FBX':
-                result = bpy.ops.export_scene.fbx(
-                    filepath=export_path,
-                    use_selection=True,
-                    global_scale=export_scale
-                )
-            else:
-                self.report({'ERROR'}, f"Unsupported format: {self.export_format}")
-                continue
+            # Export shape keys individually if requested
+            if self.export_shape_keys and obj.type == 'MESH' and obj.data.shape_keys:
+                key_blocks = obj.data.shape_keys.key_blocks
+                original_values = [kb.value for kb in key_blocks]
+                # Export the basis shape first
+                for i, kb in enumerate(key_blocks):
+                    # Set all shape keys to 0 except the current one
+                    for j, kb2 in enumerate(key_blocks):
+                        kb2.value = 1.0 if i == j else 0.0
+                    export_path = os.path.join(
+                        assets_dir,
+                        f"{obj.name}_SK-{kb.name}.{self.export_format.lower()}"
+                    )
+                    if self.export_format == 'OBJ':
+                        result = bpy.ops.wm.obj_export(
+                            filepath=export_path,
+                            export_selected_objects=True,
+                            global_scale=export_scale
+                        )
+                    elif self.export_format == 'FBX':
+                        result = bpy.ops.export_scene.fbx(
+                            filepath=export_path,
+                            use_selection=True,
+                            global_scale=export_scale
+                        )
+                    else:
+                        self.report({'ERROR'}, f"Unsupported format: {self.export_format}")
+                        continue
 
-            if result == {'FINISHED'}:
-                self.report({'INFO'}, f"Exported {obj.name} to {export_path}")
+                    if result == {'FINISHED'}:
+                        self.report({'INFO'}, f"Exported {obj.name} shape key {kb.name} to {export_path}")
+                    else:
+                        self.report({'WARNING'}, f"Failed to export {obj.name} shape key {kb.name}")
+
+                # Restore original shape key values
+                for kb, val in zip(key_blocks, original_values):
+                    kb.value = val
             else:
-                self.report({'WARNING'}, f"Failed to export {obj.name}")
+                export_path = os.path.join(assets_dir, f"{obj.name}.{self.export_format.lower()}")
+                if self.export_format == 'OBJ':
+                    result = bpy.ops.wm.obj_export(
+                        filepath=export_path,
+                        export_selected_objects=True,
+                        global_scale=export_scale
+                    )
+                elif self.export_format == 'FBX':
+                    result = bpy.ops.export_scene.fbx(
+                        filepath=export_path,
+                        use_selection=True,
+                        global_scale=export_scale
+                    )
+                else:
+                    self.report({'ERROR'}, f"Unsupported format: {self.export_format}")
+                    continue
+
+                if result == {'FINISHED'}:
+                    self.report({'INFO'}, f"Exported {obj.name} to {export_path}")
+                else:
+                    self.report({'WARNING'}, f"Failed to export {obj.name}")
 
         # Reselect original selection
         for obj in selected_objects:
