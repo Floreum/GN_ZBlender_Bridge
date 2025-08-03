@@ -4,20 +4,23 @@ import platform
 from bpy.types import Operator
 
 bl_info = {
-    "name": "GN Blender Bridge",
+    "name": "GN ZBlender Bridge",
     "author": "Floreum",
     "version": (1, 0, 0),
     "blender": (4, 5, 0),
-    "location": "File > Bridge Import / Bridge Export",
+    "location": "File > ZBrush  Import / ZBrush  Export",
     "description": "Imports or Exports selected  objects to/from OBJ",
     "category": "Import-Export",
 }
 
 # Cross-platform file path handling
 if platform.system() == 'Windows':
-    FILE_PATH = "C:\\BlenderBridge"
+    FILE_PATH = "C:\\temp"
 else:
-    FILE_PATH = "/home/floreum/Games/zbrush_2022-0-8/drive_c/temp"
+    FILE_PATH = "/home/floreum/Games/zbrush_2022-0-8/drive_c/temp/"
+#elif platform.system() == 'Linux':
+#    FILE_PATH = "/home/floreum/Games/zbrush_2022-0-8/drive_c/temp/"
+#elif platform.system() == 'Darwin':  # macOS -- this probably doesn't work so disabled for now
 
 OBJ_FILENAME = "exported.obj"
 
@@ -32,7 +35,7 @@ def self_report(context, level, message):
 
 def import_obj(context):
     obj_file = os.path.join(FILE_PATH, OBJ_FILENAME)
-    print(f"Bridge Import → {obj_file}")
+    print(f"ZBrush  Import → {obj_file}")
 
     if not os.path.isfile(obj_file):
         self_report(context, 'ERROR', f"OBJ file not found: {obj_file}")
@@ -95,8 +98,8 @@ def import_obj(context):
         for v in imported_mesh.vertices:
             v.co = (rot_mtx @ v.co.to_4d()).to_3d()
         imported_obj.rotation_euler = (0.0, 0.0, 0.0)
-        imported_obj.name = "BlenderBridge"
-        print("No selection — imported object left in scene with baked rotation.")
+        imported_obj.name = "ZBlenderBridge"
+        print("No selection - imported object left in scene with baked rotation.")
 
 
     try:
@@ -108,7 +111,7 @@ def import_obj(context):
     return {'FINISHED'}
 
 def export_obj(context):
-    print("Bridge Export →", FILE_PATH)
+    print("ZBrush  Export →", FILE_PATH)
     os.makedirs(FILE_PATH, exist_ok=True)
     out_file = os.path.join(FILE_PATH, OBJ_FILENAME)
     bpy.ops.wm.obj_export(
@@ -118,36 +121,36 @@ def export_obj(context):
     return {'FINISHED'}
 
 
-class BridgeImport(Operator):
-    bl_idname = "bridge.obj_import"
-    bl_label = "Bridge Import"
+class ZBrushImport(Operator):
+    bl_idname = "zbridge.obj_import"
+    bl_label = "ZBrush Import"
     def execute(self, context):
         return import_obj(context)
 
 
-class BridgeExport(Operator):
-    bl_idname = "bridge.obj_export"
-    bl_label = "Bridge Export"
+class ZBrushExport(Operator):
+    bl_idname = "zbridge.obj_export"
+    bl_label = "ZBrush Export"
     def execute(self, context):
         return export_obj(context)
 
 def menu_func_import(self, context):
-    self.layout.operator(BridgeImport.bl_idname, text="Bridge Import")
+    self.layout.operator(ZBrushImport.bl_idname, text="ZBrush  Import")
 
 def menu_func_export(self, context):
-    self.layout.operator(BridgeExport.bl_idname, text="Bridge Export")
+    self.layout.operator(ZBrushExport.bl_idname, text="ZBrush  Export")
 
 def register():
-    bpy.utils.register_class(BridgeImport)
+    bpy.utils.register_class(ZBrushImport)
     bpy.types.TOPBAR_MT_file.append(menu_func_import)
-    bpy.utils.register_class(BridgeExport)
+    bpy.utils.register_class(ZBrushExport)
     bpy.types.TOPBAR_MT_file.append(menu_func_export)
 
 def unregister():
     bpy.types.TOPBAR_MT_file.remove(menu_func_import)
-    bpy.utils.unregister_class(BridgeImport)
+    bpy.utils.unregister_class(ZBrushImport)
     bpy.types.TOPBAR_MT_file.remove(menu_func_export)
-    bpy.utils.unregister_class(BridgeExport)
+    bpy.utils.unregister_class(ZBrushExport)
 
 if __name__ == "__main__":
     register()
