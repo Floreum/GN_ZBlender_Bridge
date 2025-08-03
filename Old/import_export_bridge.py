@@ -5,8 +5,8 @@ from bpy.types import Operator
 
 bl_info = {
     "name": "Import/Export OBJ Bridge",
-    "author": "Happy Customer. Edits by: Floreum",
-    "version": (1, 3, 4),
+    "author": "Floreum",
+    "version": (1, 0, 0),
     "blender": (4, 5, 0),
     "location": "File > Bridge Import / Bridge Export",
     "description": "Imports or Exports selected OBJ files from a fixed folder, with mesh-replace or shape-key bake",
